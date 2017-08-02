@@ -9,6 +9,10 @@
   <body>
     <h1>Login Here</h1>
 
+    <div id="not_a_user">
+      {{thing}}
+    </div>
+
     <ul id="errors">
       {{#errors}}
         <li>{{msg}}</li>
@@ -17,7 +21,7 @@
 
     <form id="login_form" action="/login" method="post">
       <div id="input1">
-      <input type="email" name="email" placeholder="Email" value="{{userData.email}}"/></br>
+      <input type="text" name="username" placeholder="username" value="{{userData.username}}"/></br>
     </div>
 
       <div id="input2">

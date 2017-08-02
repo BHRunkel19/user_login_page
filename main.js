@@ -1,13 +1,10 @@
 //require packages
 const express = require('express');
-const mustacheExpress = require('mustache-express');
-const morgan = require('morgan');
 const expHandlebars = require('express-handlebars')
 const validator = require('express-validator')
 const session = require('express-session');
 const bodyParser = require('body-parser')
-const fs = require('fs');
-const users = require('./data.js')
+const userData = require('./data.js')
 const app = express();
 
 //define templates
@@ -16,17 +13,14 @@ app.set('views', './views');
 app.set('view engine', 'handlebars');
 
 
-//configure session
+//configure express-session
 app.use(
   session({
     secret: 'blargh',
-    resave: false,
+    resave: false, //doesn't save without changes
     saveUninitialized: true
   })
 )
-
-//setup morgan for log request
-app.use(morgan('dev'));
 
 //configure app to render static files
 app.use(express.static('public'));
@@ -39,57 +33,60 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(validator());
 
 //create default session
-app.use((req, res, next) => {
-  if (!req.session.users){
-
-    req.session.users = [];
-
-  }
-  console.log(req.session);
-  next();
-})
-
-//configure the webroot
-app.get('/', (req, res) => {
-  if (req.session.users === undefined || req.session.users.length == 0){
-    res.redirect('/login');
+app.get('/', function(req, res){
+  if (!req.session.user){
+    res.redirect('/login')
   } else {
-    res.render('home')
+    res.render('home', {
+      user: req.session.user
+    });
   }
+});
 
-})
-
-//configure login form page
 app.get('/login', (req, res) => {
-  res.render('login')
-})
+  res.render('login');
+});
 
 app.post('/login', (req, res) => {
-  let userData = req.body;
+  let player = req.body;
 
-  req.checkBody('email', 'Email is required').notEmpty();
-
-  req.checkBody('password', 'Password is required').notEmpty();
+  req.checkBody('username', 'Username is required, dummy!').notEmpty();
+  req.checkBody('password', 'Password is required, dummy!').notEmpty();
 
   let errors = req.validationErrors();
 
   if (errors){
-    console.log(errors);
-
     res.render('login', {
-      errors: errors,
-      userData: userData
-    })
+      errors: errors
+    });
 
   } else {
-
-    req.session.users.push(userData);
-    users.push(userData);
+    let users = userData.filter(function(userCheck){
+      return userCheck.username === req.body.username;
+    });
     console.log(users);
 
-    res.redirect('/');
+    if (users.length === 0) {
+      let notRecognized = "No User Found."
+      res.render('login', {
+        thing: notRecognized
+      })
+    }
+
+
+    let user = users[0];
+
+    if (user.password === req.body.password){
+      req.session.user = user.username;
+      res.redirect('/');
+    } else {
+      let notPassword = "Womp womp"
+      res.render('login', {
+        something: notPassword
+      });
+    }
   }
-})
+});
 
 //define how the app will listen and respond to program initiation
 app.listen(3000, function(){
